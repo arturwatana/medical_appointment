@@ -1,5 +1,6 @@
+import { parameterRequiredError } from "../../../../errors/parameter-required.error";
 import { User } from "../../entities/user.entity";
-import { UserRepository } from "../../repositories/user.repository";
+import { IUserRepository } from "../../repositories/user.repository";
 
 type UserRequest = {
   name: string;
@@ -8,15 +9,16 @@ type UserRequest = {
 };
 
 export class CreateUserUseCase {
+  constructor(private userRepository: IUserRepository) {}
+
   async execute(data: UserRequest) {
-    const userRepository = UserRepository.getInstance();
     const user = User.create(data);
 
     if (!data.username || !data.password) {
-      throw new Error("Username or password is required");
+      throw new parameterRequiredError("Username or password is required", 422);
     }
 
-    const userAlreadyExists = await userRepository.findByUserName(
+    const userAlreadyExists = await this.userRepository.findByUserName(
       data.username
     );
 
@@ -24,7 +26,7 @@ export class CreateUserUseCase {
       throw new Error("User already exists");
     }
 
-    const userCreated = await userRepository.save(user);
+    const userCreated = await this.userRepository.save(user);
     return userCreated;
   }
 }
